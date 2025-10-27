@@ -1,3 +1,10 @@
+import streamlit as st
+import joblib
+import numpy as np
+
+# Load model and scaler safely
+model = joblib.load("irrigation_model.joblib")
+scaler = joblib.load("scaler.joblib")
 # Cell 8: Predict irrigation + water_needed_mm + next_irrigation_days
 
 import pickle
@@ -38,3 +45,4 @@ else:
 
 print(f"💧 Estimated Water Needed: {water_needed_mm} mm")
 print(f"📅 Next Irrigation Suggested After: {next_irrigation_days} days")
+
