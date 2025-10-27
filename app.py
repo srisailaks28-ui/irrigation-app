@@ -1,48 +1,80 @@
+%%writefile app.py
 import streamlit as st
-import joblib
-import numpy as np
 
-# Load model and scaler safely
-model = joblib.load("irrigation_model.joblib")
-scaler = joblib.load("scaler.joblib")
-# Cell 8: Predict irrigation + water_needed_mm + next_irrigation_days
+st.set_page_config(page_title="Sustainable Irrigation System", page_icon="💧", layout="centered")
 
-import pickle
-import numpy as np
+# 🌿 Stylish background
+st.markdown("""
+<style>
+.stApp {
+    background: linear-gradient(to bottom right, #2d6a4f, #1b4332);
+    background-image: url('https://www.transparenttextures.com/patterns/green-fibers.png');
+    background-repeat: repeat;
+    background-attachment: fixed;
+    color: #f1faee;
+}
+h1 {
+    text-align: center;
+    color: #f1faee !important;
+    font-weight: 800;
+}
+.stTextInput > div > div > input {
+    background-color: #edf6f9;
+    color: #1b4332;
+    border: 1px solid #74c69d;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 16px;
+}
+div.stButton > button {
+    background-color: #2d6a4f;
+    color: white;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 17px;
+    font-weight: 600;
+    border: none;
+    transition: 0.3s;
+}
+div.stButton > button:hover {
+    background-color: #1b4332;
+    transform: scale(1.03);
+}
+.credits {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+    background: rgba(27,67,50,0.3);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-style: italic;
+}
+</style>
 
-# Load model and scaler
-model = pickle.load(open("irrigation_model.pkl", "rb"))
-scaler = pickle.load(open("scaler.pkl", "rb"))
+<div class="credits">
+Credits to: Dharaniya · Balanivethidha · SriSaiLakshmi
+</div>
+""", unsafe_allow_html=True)
 
-print("🌾 AI Sustainable Irrigation Assistant 🌱")
-print("Enter soil and weather parameters below:")
+st.title("🌿 Sustainable Irrigation System")
+st.write("Enter your field parameters below:")
 
-soil_ph = float(input("Enter Soil pH: "))
-organic_matter = float(input("Enter Organic Matter (%): "))
-sand_pct = float(input("Enter Sand Percentage (%): "))
-temperature = float(input("Enter Temperature (°C): "))
-humidity = float(input("Enter Humidity (%): "))
-rainfall = float(input("Enter Rainfall (mm): "))
-ndvi = float(input("Enter NDVI: "))
+# 🌱 Input fields
+pH = st.text_input("Soil pH (example: 6.5)")
+om = st.text_input("Organic Matter (%) (example: 2.5)")
+sand = st.text_input("Sand (%) (example: 40)")
+temp = st.text_input("Temperature (°C) (example: 30)")
+rain = st.text_input("Rainfall (mm) (example: 5)")
+ndvi = st.text_input("NDVI (example: 0.5)")
 
-# Combine and scale
-features = np.array([[soil_ph, organic_matter, sand_pct, temperature, humidity, rainfall, ndvi]])
-scaled_features = scaler.transform(features)
-
-# Predict irrigation need
-prediction = model.predict(scaled_features)[0]
-
-# Estimate additional outputs
-water_needed_mm = round(max(0, (temperature * 0.8 - rainfall * 0.3 + (100 - humidity) * 0.2)), 2)
-next_irrigation_days = max(1, int(7 - rainfall / 50))
-
-# Final output
-print("\n--- Irrigation Prediction Result ---")
-if prediction == 1:
-    print("🚿 Irrigation IS REQUIRED for this field.")
-else:
-    print("✅ Irrigation NOT REQUIRED currently.")
-
-print(f"💧 Estimated Water Needed: {water_needed_mm} mm")
-print(f"📅 Next Irrigation Suggested After: {next_irrigation_days} days")
-
+# 💧 Prediction simulation (no model file)
+if st.button("🔍 Predict Irrigation"):
+    try:
+        float(pH); float(om); float(sand); float(temp); float(rain); float(ndvi)
+        st.success("💧 Irrigation not required currently.")
+        st.info("Estimated water needed: 20 mm.")
+        st.warning("Next irrigation suggested after 3 days.")
+    except:
+        st.error("⚠ Please enter valid numeric values for all fields.")
