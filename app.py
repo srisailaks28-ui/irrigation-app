@@ -1,4 +1,4 @@
-%%writefile app.py
+
 import streamlit as st
 
 st.set_page_config(page_title="Sustainable Irrigation System", page_icon="💧", layout="centered")
@@ -78,3 +78,4 @@ if st.button("🔍 Predict Irrigation"):
         st.warning("Next irrigation suggested after 3 days.")
     except:
         st.error("⚠ Please enter valid numeric values for all fields.")
+
