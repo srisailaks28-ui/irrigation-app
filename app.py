@@ -1,85 +1,142 @@
 import streamlit as st
-import joblib
+import pickle
 import numpy as np
+import re
 
-# Load models
-model = joblib.load("irrigation_model.pkl")
-scaler = joblib.load("scaler.pkl")
+# ---- Load model and scaler ----
+model = pickle.load(open("irrigation_model.pkl", "rb"))
+scaler = pickle.load(open("scaler.pkl", "rb"))
 
-# Page configuration
-st.set_page_config(page_title="Sustainable Irrigation System", layout="centered")
+# ---- Page setup ----
+st.set_page_config(page_title="Smart Irrigation Predictor", page_icon="💧", layout="centered")
 
-# 🌿 Custom background (agriculture green)
-page_bg = """
+# ---- Custom CSS styling ----
+st.markdown("""
 <style>
-[data-testid="stAppViewContainer"] {
-    background-color: #b7d7a8; /* soft agriculture green */
-    background-size: cover;
+/* 🌿 Background - dark sustainable green with soft texture overlay */
+.stApp {
+    background: linear-gradient(to bottom right, #204e30, #3a6b45);
+    background-image: url('https://www.transparenttextures.com/patterns/green-fibers.png');
+    background-repeat: repeat;
+    background-attachment: fixed;
+    color: #f1faee;
 }
-[data-testid="stHeader"] {
-    background: rgba(0,0,0,0);
+
+/* Input boxes */
+.stTextInput > div > div > input {
+    background-color: #edf6f9;
+    color: #204e30;
+    border: 1px solid #74c69d;
+    border-radius: 10px;
+    padding: 8px;
+    font-size: 16px;
 }
-h1, h2, h3 {
-    color: #1b4332;
-    text-align: center;
+
+/* Buttons */
+div.stButton > button {
+    background-color: #40916c;
+    color: white;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    transition: 0.3s;
 }
-footer {
-    visibility: hidden;
+div.stButton > button:hover {
+    background-color: #1b4332;
+    transform: scale(1.02);
 }
-.credit-box {
-    background-color: rgba(255,255,255,0.8);
-    border-radius: 12px;
+
+/* Result text */
+.stSuccess, .stWarning, .stInfo {
+    background-color: rgba(255,255,255,0.15);
+    border-radius: 8px;
     padding: 10px;
-    text-align: center;
-    color: #1b4332;
-    font-weight: 500;
-    margin-top: 30px;
+}
+
+/* Credits blended softly at bottom */
+.credits {
+    position: fixed;
+    bottom: 6px;
+    left: 10px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+    background: rgba(32,78,48,0.3);
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-style: italic;
 }
 </style>
-"""
-st.markdown(page_bg, unsafe_allow_html=True)
 
-# 🌾 Title
-st.title("💧 Sustainable Irrigation Prediction System")
-
-st.write("### Enter your field parameters below:")
-
-# 🧮 Manual input fields with realistic examples
-soil_ph = st.text_input("Soil pH (example: 6.5)")
-organic_matter = st.text_input("Organic Matter % (example: 3.2)")
-sand_percent = st.text_input("Sand % (example: 45)")
-temperature = st.text_input("Temperature (°C) (example: 30)")
-rainfall = st.text_input("Rainfall (mm) (example: 10)")
-ndvi = st.text_input("NDVI (example: 0.6)")
-
-# Predict button
-if st.button("🔍 Predict Irrigation Need"):
-    try:
-        # Convert to float
-        inputs = np.array([[float(soil_ph), float(organic_matter), float(sand_percent),
-                            float(temperature), float(rainfall), float(ndvi)]])
-        
-        # Scale + Predict
-        scaled = scaler.transform(inputs)
-        prediction = model.predict(scaled)[0]
-
-        # Output result
-        st.subheader("🌱 Result:")
-        if prediction == 0:
-            st.success("Irrigation not required currently.")
-            st.info("💧 Estimated water need: Low\n📅 Next irrigation suggested after 3–5 days.")
-        else:
-            st.warning("Irrigation required soon.")
-            st.info("💧 Estimated water need: High\n📅 Immediate irrigation recommended.")
-    except:
-        st.error("⚠ Please enter valid numeric values for all fields.")
-
-# Footer credits
-st.markdown("""
-<div class='credit-box'>
-    <p>Credits to:<br>
-    Dharaniya<br>
-    Balanivethidha<br>
-    SriSaiLakshmi</p>
-</div>
+<div class="credits">Credits: Dharaniya · Balanivethidha · SriSaiLakshmi</div>
 """, unsafe_allow_html=True)
+
+# ---- App Title ----
+st.markdown("<h1 style='text-align:center; color:#f1faee;'>🌾 Smart Irrigation Prediction System</h1>", unsafe_allow_html=True)
+st.write("### Enter numeric values for your field data below:")
+
+# ---- Input fields ----
+fields = {
+    "Soil pH": "6.5",
+    "Organic Matter %": "3.3",
+    "Sand %": "45",
+    "Temperature (°C)": "32",
+    "Rainfall (mm)": "10",
+    "NDVI": "0.6"
+}
+
+cols = st.columns(2)
+raw_inputs = {}
+i = 0
+for label, example in fields.items():
+    with cols[i % 2]:
+        raw = st.text_input(f"{label} (example: {example})", "")
+        raw_inputs[label] = raw
+    i += 1
+
+# ---- Helper to clean numeric input ----
+def parse_number(s):
+    if s is None or s.strip() == "":
+        raise ValueError("empty")
+    s = s.strip().replace(",", ".")
+    try:
+        return float(s)
+    except:
+        m = re.search(r"[-+]?\d*\.?\d+", s)
+        if m:
+            return float(m.group(0))
+    raise ValueError(f"cannot parse '{s}'")
+
+# ---- Predict Button ----
+if st.button("💧 Predict Irrigation Need"):
+    parsed = {}
+    bad = {}
+
+    for k, raw in raw_inputs.items():
+        try:
+            val = parse_number(raw)
+            parsed[k] = val
+        except ValueError as e:
+            bad[k] = {"raw": raw, "error": str(e)}
+
+    if bad:
+        st.error("⚠ Please enter valid numeric values for all fields.")
+        for k, info in bad.items():
+            st.write(f"{k}** → raw: {info['raw']} · error: {info['error']}")
+    else:
+        values = [parsed[k] for k in fields.keys()]
+        X = np.array([values])
+        try:
+            X_scaled = scaler.transform(X)
+            pred = model.predict(X_scaled)[0]
+        except Exception as e:
+            st.error(f"Model/scaler error: {e}")
+        else:
+            st.subheader("🌱 Result")
+            if int(pred) == 0:
+                st.success("Irrigation not required currently.")
+                st.info("💧 Estimated water need: Low\n📅 Next irrigation suggested after 3–5 days.")
+            else:
+                st.warning("Irrigation required soon.")
+                st.info("💧 Estimated water need: High\n📅 Immediate irrigation recommended.")
