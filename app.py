@@ -2,44 +2,14 @@ import streamlit as st
 import random
 from gtts import gTTS
 import os
-import speech_recognition as sr
-from pydub import AudioSegment
 
 # --- Page setup ---
 st.set_page_config(page_title="Sustainable Irrigation System", layout="centered")
 
-# --- Function: voice input from uploaded audio ---
-def voice_from_audio(uploaded_file, lang_code="en"):
-    if uploaded_file is not None:
-        recognizer = sr.Recognizer()
-        with open("temp_audio.wav", "wb") as f:
-            f.write(uploaded_file.read())
-
-        # Convert to wav if needed
-        try:
-            audio = AudioSegment.from_file("temp_audio.wav")
-            audio.export("converted.wav", format="wav")
-        except:
-            st.error("Error converting audio file. Please try again.")
-            return None
-
-        with sr.AudioFile("converted.wav") as source:
-            audio_data = recognizer.record(source)
-        try:
-            text = recognizer.recognize_google(audio_data, language=lang_code)
-            st.success(f"You said: {text}")
-            try:
-                return float(text)
-            except:
-                st.warning("Could not detect a numeric value.")
-        except Exception:
-            st.error("Sorry, could not recognize your voice.")
-    return None
-
 # --- Language selection ---
 language = st.selectbox("🌐 Select Language", ["English", "தமிழ் (Tamil)", "हिन्दी (Hindi)"])
 
-# --- Translation dictionary ---
+# --- Translations dictionary ---
 translations = {
     "English": {
         "title": "🌾 Smart Sustainable Irrigation System",
@@ -78,43 +48,36 @@ translations = {
         "sustainable_tip": "🌾 स्थिरता सुझाव"
     }
 }
+
 t = translations[language]
-lang_code = "en" if language == "English" else ("ta-IN" if "Tamil" in language else "hi-IN")
 
-# --- Title ---
+# --- Page title ---
 st.title(t["title"])
-st.write("🎧 You can upload a short voice recording (WAV/MP3) or type values manually.")
 
-# --- Inputs (upload or manual) ---
-uploaded_ph = st.file_uploader(f"Upload voice for {t['ph']} (optional)", type=["wav", "mp3"])
-ph_voice = voice_from_audio(uploaded_ph, lang_code)
-ph = ph_voice if ph_voice is not None else st.number_input(t["ph"], 0.0, 14.0, 6.5)
-
-uploaded_temp = st.file_uploader(f"Upload voice for {t['temp']} (optional)", type=["wav", "mp3"])
-temp_voice = voice_from_audio(uploaded_temp, lang_code)
-temp = temp_voice if temp_voice is not None else st.number_input(t["temp"], 0.0, 60.0, 30.0)
-
-uploaded_rain = st.file_uploader(f"Upload voice for {t['rain']} (optional)", type=["wav", "mp3"])
-rain_voice = voice_from_audio(uploaded_rain, lang_code)
-rain = rain_voice if rain_voice is not None else st.number_input(t["rain"], 0.0, 500.0, 10.0)
-
-uploaded_ndvi = st.file_uploader(f"Upload voice for {t['ndvi']} (optional)", type=["wav", "mp3"])
-ndvi_voice = voice_from_audio(uploaded_ndvi, lang_code)
-ndvi = ndvi_voice if ndvi_voice is not None else st.number_input(t["ndvi"], 0.0, 1.0, 0.5)
+# --- Input fields ---
+ph = st.number_input(t["ph"], 0.0, 14.0, 6.5)
+temp = st.number_input(t["temp"], 0.0, 60.0, 30.0)
+rain = st.number_input(t["rain"], 0.0, 500.0, 10.0)
+ndvi = st.number_input(t["ndvi"], 0.0, 1.0, 0.5)
 
 # --- Predict button ---
 if st.button(t["predict"]):
     irrigation_needed = temp > 35 or rain < 5
-    msg = t["irrigation_required"] if irrigation_needed else t["irrigation_not_required"]
+
+    # --- Result based on condition ---
+    if irrigation_needed:
+        msg = t["irrigation_required"]
+    else:
+        msg = t["irrigation_not_required"]
 
     st.subheader("💧 " + msg)
 
     # --- Sustainability score ---
-    score = random.uniform(6.0, 10.0)
+    sustainability_score = random.uniform(6.0, 10.0)
     st.subheader(t["sustainability_score"])
-    st.write(f"{score:.1f} / 10**")
+    st.write(f"{sustainability_score:.1f} / 10**")
 
-    # --- Tip section ---
+    # --- Tips section ---
     tips = {
         "English": [
             "Use mulching to retain soil moisture.",
@@ -132,15 +95,16 @@ if st.button(t["predict"]):
             "वाष्पीकरण को कम करने के लिए सुबह सिंचाई करें।",
         ],
     }
+
     tip = random.choice(tips[language])
     st.subheader(t["sustainable_tip"])
     st.info(tip)
 
-    # --- Voice output for result ---
+    # --- Voice output for full message ---
     try:
-        lang_code_tts = "en" if language == "English" else ("ta" if "Tamil" in language else "hi")
-        full_text = f"{msg}. Sustainability score is {score:.1f}. {tip}"
-        tts = gTTS(text=full_text, lang=lang_code_tts)
+        lang_code = "en" if language == "English" else ("ta" if "Tamil" in language else "hi")
+        speech_text = f"{msg}. Sustainability score is {sustainability_score:.1f}. {tip}"
+        tts = gTTS(text=speech_text, lang=lang_code)
         tts.save("speak.mp3")
         st.audio("speak.mp3")
     except Exception as e:
