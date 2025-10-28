@@ -1,81 +1,90 @@
-
 import streamlit as st
+import random
+from gtts import gTTS
+import os
 
-st.set_page_config(page_title="Sustainable Irrigation System", page_icon="💧", layout="centered")
+# --- Page setup ---
+st.set_page_config(page_title="Sustainable Irrigation System", layout="centered")
 
-# 🌿 Stylish background
-st.markdown("""
-<style>
-.stApp {
-    background: linear-gradient(to bottom right, #2d6a4f, #1b4332);
-    background-image: url('https://www.transparenttextures.com/patterns/green-fibers.png');
-    background-repeat: repeat;
-    background-attachment: fixed;
-    color: #f1faee;
-}
-h1 {
-    text-align: center;
-    color: #f1faee !important;
-    font-weight: 800;
-}
-.stTextInput > div > div > input {
-    background-color: #edf6f9;
-    color: #1b4332;
-    border: 1px solid #74c69d;
-    border-radius: 8px;
-    padding: 8px;
-    font-size: 16px;
-}
-div.stButton > button {
-    background-color: #2d6a4f;
-    color: white;
-    border-radius: 8px;
-    padding: 10px 20px;
-    font-size: 17px;
-    font-weight: 600;
-    border: none;
-    transition: 0.3s;
-}
-div.stButton > button:hover {
-    background-color: #1b4332;
-    transform: scale(1.03);
-}
-.credits {
-    position: fixed;
-    bottom: 10px;
-    left: 10px;
-    font-size: 13px;
-    color: rgba(255,255,255,0.7);
-    background: rgba(27,67,50,0.3);
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-style: italic;
-}
-</style>
+st.title("🌾 Smart Sustainable Irrigation System")
 
-<div class="credits">
-Credits to: Dharaniya · Balanivethidha · SriSaiLakshmi
-</div>
-""", unsafe_allow_html=True)
+# --- Language selection ---
+language = st.selectbox("🌐 Select Language", ["English", "தமிழ் (Tamil)", "हिन्दी (Hindi)"])
 
-st.title("🌿 Sustainable Irrigation System")
-st.write("Enter your field parameters below:")
+# --- Input fields ---
+ph = st.number_input("Soil pH", 0.0, 14.0, 6.5)
+temp = st.number_input("Temperature (°C)", 0.0, 60.0, 30.0)
+rain = st.number_input("Rainfall (mm)", 0.0, 500.0, 10.0)
+ndvi = st.number_input("NDVI", 0.0, 1.0, 0.5)
 
-# 🌱 Input fields
-pH = st.text_input("Soil pH (example: 6.5)")
-om = st.text_input("Organic Matter (%) (example: 2.5)")
-sand = st.text_input("Sand (%) (example: 40)")
-temp = st.text_input("Temperature (°C) (example: 30)")
-rain = st.text_input("Rainfall (mm) (example: 5)")
-ndvi = st.text_input("NDVI (example: 0.5)")
+# --- Translate button text ---
+if language == "English":
+    button_text = "Predict Irrigation"
+elif language == "தமிழ் (Tamil)":
+    button_text = "நீர்ப்பாசனம் கணிக்க"
+else:
+    button_text = "सिंचाई की भविष्यवाणी करें"
 
-# 💧 Prediction simulation (no model file)
-if st.button("🔍 Predict Irrigation"):
+# --- Predict button ---
+if st.button(button_text):
+    # Dummy logic for demo
+    irrigation_needed = temp > 35 or rain < 5
+
+    # --- Result text by language ---
+    if irrigation_needed:
+        if language == "English":
+            msg = "Irrigation required soon."
+        elif language == "தமிழ் (Tamil)":
+            msg = "விரைவில் நீர்ப்பாசனம் தேவை."
+        else:
+            msg = "शीघ्र सिंचाई की आवश्यकता है."
+    else:
+        if language == "English":
+            msg = "Irrigation not required currently."
+        elif language == "தமிழ் (Tamil)":
+            msg = "தற்போது நீர்ப்பாசனம் தேவையில்லை."
+        else:
+            msg = "फिलहाल सिंचाई की आवश्यकता नहीं है."
+
+    st.subheader("💧 " + msg)
+
+    # --- Sustainability score ---
+    sustainability_score = random.uniform(6.0, 10.0)
+    st.subheader("♻ Sustainability Score")
+    st.write(f"{sustainability_score:.1f} / 10**")
+
+    # --- Tip section ---
+    tips = {
+        "English": [
+            "Use mulching to retain soil moisture.",
+            "Collect rainwater for irrigation.",
+            "Irrigate early in the morning to reduce evaporation.",
+        ],
+        "தமிழ் (Tamil)": [
+            "மண்ணின் ஈரத்தை தக்கவைத்துக்கொள்ள மடிப்பு முறையைப் பயன்படுத்துங்கள்.",
+            "மழைநீரை சேகரித்து நீர்ப்பாசனத்திற்கு பயன்படுத்துங்கள்.",
+            "நீராவி இழப்பை குறைக்க காலை நேரத்தில் நீர்ப்பாசனம் செய்யுங்கள்.",
+        ],
+        "हिन्दी (Hindi)": [
+            "मल्चिंग का उपयोग करें ताकि मिट्टी में नमी बनी रहे।",
+            "सिंचाई के लिए वर्षा जल एकत्र करें।",
+            "वाष्पीकरण को कम करने के लिए सुबह सिंचाई करें।",
+        ],
+    }
+
+    tip = random.choice(tips[language])
+    st.subheader("🌾 Sustainable Tip")
+    st.info(tip)
+
+    # --- Voice output (optional) ---
     try:
-        float(pH); float(om); float(sand); float(temp); float(rain); float(ndvi)
-        st.success("💧 Irrigation not required currently.")
-        st.info("Estimated water needed: 20 mm.")
-        st.warning("Next irrigation suggested after 3 days.")
-    except:
-        st.error("⚠ Please enter valid numeric values for all fields.")
+        lang_code = "en" if language == "English" else ("ta" if language == "தமிழ் (Tamil)" else "hi")
+        tts = gTTS(text=msg, lang=lang_code)
+        tts.save("speak.mp3")
+        st.audio("speak.mp3")
+    except Exception as e:
+        st.warning(f"Voice not available in this environment: {e}")
 
+# --- Footer ---
+st.markdown("---")
+st.caption("Designed by: Dharaniya | Balanivethidha | SriSaiLakshmi | ")
